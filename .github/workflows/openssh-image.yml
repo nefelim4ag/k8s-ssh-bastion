@@ -2,9 +2,8 @@ name: Build OpenSSH image
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+    tags:
+      - '*'
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
