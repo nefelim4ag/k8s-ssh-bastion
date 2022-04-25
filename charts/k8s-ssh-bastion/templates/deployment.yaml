@@ -65,7 +65,8 @@ spec:
                 chmod 700 /home/${i##*/}/.ssh
                 chown -R ${i##*/}:nogroup /home/${i##*/}
               done
-              service ssh start &
+
+              mkdir -p /run/sshd
 
               /usr/sbin/sshd -D -E /proc/1/fd/1
           ports:
