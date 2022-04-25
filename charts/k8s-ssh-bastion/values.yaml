@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/nefelim4ag/k8s-ssh-bastion
-  tag: 0.1.0
+  tag: "{{ .Chart.AppVersion }}"
   pullPolicy: IfNotPresent
   imagePullSecrets: []
 
