@@ -37,15 +37,12 @@ spec:
     spec:
       containers:
         - name: bastion
-          image: ubuntu:latest
-          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - /bin/bash
             - -ec
             - |
-              apt update > /dev/null
-              apt install -y openssh-server > /dev/null
-              apt clean > /dev/null
               mkdir -p /run/sshd
               USER_UID=1000
               for i in /etc/users/*; do
@@ -70,6 +67,7 @@ spec:
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       affinity: {{ .Values.affinity | toJson }}
+      imagePullSecrets: {{ .Values.image.imagePullSecrets | toJson }}
       volumes:
       - name: config-volume
         configMap:

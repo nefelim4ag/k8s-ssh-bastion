@@ -1,4 +1,10 @@
-replicaCount: 3
+image:
+  repository: ghcr.io/nefelim4ag/k8s-ssh-bastion
+  tag: develop
+  pullPolicy: IfNotPresent
+  imagePullSecrets: []
+
+replicaCount: 1
 
 service:
   annotations: {}
