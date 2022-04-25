@@ -45,15 +45,23 @@ spec:
             - |
               for file in /etc/ssh_origin/*; do
                 NAME=$(basename $file)
-                cp -av /etc/ssh_origin/$NAME /etc/ssh/$NAME
-                chmod 0600 /etc/ssh/$NAME
+                install -Dm0600 /etc/ssh_origin/$NAME /etc/ssh/$NAME
+              done
+
+              cd /etc/ssh
+              for key_type in dsa rsa ecdsa ed25519; do
+                lengh=4096
+                [ $key_type == "dsa" ] && lengh=1024
+                [ $key_type == "ecdsa" ] && lengh=256
+                test -f ssh_host_${key_type}_key || \
+                  ssh-keygen -q -N "" -t ${key_type} -b $lengh -f ./ssh_host_${key_type}_key
               done
 
               USER_UID=1000
               for i in /etc/users/*; do
                 useradd -rm -d /home/${i##*/} -s /bin/bash -g root -u $((USER_UID++)) ${i##*/}
                 mkdir -p /home/${i##*/}/.ssh
-                cat $i > /home/${i##*/}/.ssh/authorized_keys
+                install -Dm0600 $i /home/${i##*/}/.ssh/authorized_keys
                 chmod 700 /home/${i##*/}/.ssh
                 chown -R ${i##*/}:nogroup /home/${i##*/}
               done
@@ -69,7 +77,7 @@ spec:
             mountPath: /etc/users
           - name: sshd-configs-persistent
             mountPath: /etc/ssh
-          - name: sshd-configs-predefined
+          - name: sshd-configs-origin
             mountPath: /etc/ssh_origin
           resources:
 {{ toYaml .Values.resources | indent 12 }}
@@ -81,10 +89,10 @@ spec:
           name: {{ .Release.Name }}
       - name: sshd-configs-persistent
         persistentVolumeClaim:
-          claimName: {{ .Release.Name }}
-      - name: sshd-configs-predefined
+          claimName: {{ .Release.Name }}-etc-ssh
+      - name: sshd-configs-origin
         configMap:
-          name: {{ .Release.Name }}-etc-ssh
+          name: {{ .Release.Name }}-etc-ssh-origin
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -97,15 +105,16 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-etc-ssh
+  name: {{ .Release.Name }}-etc-ssh-origin
 data:
 {{ tpl (toYaml .Values.ssh) $ | indent 2 }}
 
 ---
+# Used to store ssh host keys & other stuff
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-etc-ssh
 spec:
   storageClassName: "{{ .Values.storageClass }}" # Empty string must be explicitly set otherwise default StorageClass will be set
   accessModes:
