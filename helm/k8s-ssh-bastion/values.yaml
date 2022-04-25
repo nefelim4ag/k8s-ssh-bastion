@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/nefelim4ag/k8s-ssh-bastion
-  tag: develop
+  tag: 0.1.0
   pullPolicy: IfNotPresent
   imagePullSecrets: []
 
@@ -18,7 +18,7 @@ resources:
 affinity: {}
 
 users: {}
-#  ttitovets: |
+#  nefelim4ag: |
 #    ssh-rsa ... comment
 
 storageClass: "efs"
