@@ -1,0 +1,18 @@
+replicaCount: 3
+
+service:
+  annotations: {}
+  nodePort: 30022
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+
+affinity: {}
+
+users: {}
+#  ttitovets: |
+#    ssh-rsa ... comment
+
+storageClass: "efs"

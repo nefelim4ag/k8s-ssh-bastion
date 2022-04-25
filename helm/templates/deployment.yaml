@@ -1,0 +1,99 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  annotations: {{ .Values.service.annotations | toJson }}
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  ports:
+    - port: 22
+      targetPort: ssh
+      protocol: TCP
+{{ with .Values.service.nodePort }}
+      nodePort: {{ . }}
+{{ end }}
+      name: ssh
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/users: {{ toJson .Values.users | sha256sum }}
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: bastion
+          image: ubuntu:latest
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/bash
+            - -ec
+            - |
+              apt update > /dev/null
+              apt install -y openssh-server > /dev/null
+              apt clean > /dev/null
+              mkdir -p /run/sshd
+              USER_UID=1000
+              for i in /etc/users/*; do
+                useradd -rm -d /home/${i##*/} -s /bin/bash -g root -u $((USER_UID++)) ${i##*/}
+                mkdir -p /home/${i##*/}/.ssh
+                cat $i > /home/${i##*/}/.ssh/authorized_keys
+                chmod 700 /home/${i##*/}/.ssh
+                chown -R ${i##*/}:nogroup /home/${i##*/}
+              done
+              service ssh start &
+
+              /usr/sbin/sshd -D -E /proc/1/fd/1
+          ports:
+            - name: ssh
+              containerPort: 22
+              protocol: TCP
+          volumeMounts:
+          - name: config-volume
+            mountPath: /etc/users
+          - name: sshd-configs
+            mountPath: /etc/ssh
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      affinity: {{ .Values.affinity | toJson }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ .Release.Name }}
+      - name: sshd-configs
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+data:
+{{ toYaml .Values.users | indent 4 }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  storageClassName: "{{ .Values.storageClass }}" # Empty string must be explicitly set otherwise default StorageClass will be set
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
