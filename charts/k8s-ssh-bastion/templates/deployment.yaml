@@ -43,7 +43,12 @@ spec:
             - /bin/bash
             - -ec
             - |
-              mkdir -p /run/sshd
+              for file in /etc/ssh_origin/*; do
+                NAME=$(basename $file)
+                cp -av /etc/ssh_origin/$NAME /etc/ssh/$NAME
+                chmod 0600 /etc/ssh/$NAME
+              done
+
               USER_UID=1000
               for i in /etc/users/*; do
                 useradd -rm -d /home/${i##*/} -s /bin/bash -g root -u $((USER_UID++)) ${i##*/}
@@ -57,13 +62,15 @@ spec:
               /usr/sbin/sshd -D -E /proc/1/fd/1
           ports:
             - name: ssh
-              containerPort: 22
+              containerPort: 1022
               protocol: TCP
           volumeMounts:
           - name: config-volume
             mountPath: /etc/users
-          - name: sshd-configs
+          - name: sshd-configs-persistent
             mountPath: /etc/ssh
+          - name: sshd-configs-predefined
+            mountPath: /etc/ssh_origin
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       affinity: {{ .Values.affinity | toJson }}
@@ -72,9 +79,12 @@ spec:
       - name: config-volume
         configMap:
           name: {{ .Release.Name }}
-      - name: sshd-configs
+      - name: sshd-configs-persistent
         persistentVolumeClaim:
           claimName: {{ .Release.Name }}
+      - name: sshd-configs-predefined
+        configMap:
+          name: {{ .Release.Name }}-etc-ssh
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -82,6 +92,14 @@ metadata:
   name: {{ .Release.Name }}
 data:
 {{ toYaml .Values.users | indent 4 }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-etc-ssh
+data:
+{{ tpl (toYaml .Values.ssh) $ | indent 2 }}
 
 ---
 apiVersion: v1
