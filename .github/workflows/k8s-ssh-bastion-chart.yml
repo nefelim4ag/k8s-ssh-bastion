@@ -2,6 +2,8 @@ name: Release k8s-ssh-bastion chart
 
 on:
   push:
+    branches:
+      - main
     tags:
       - '*'
 
