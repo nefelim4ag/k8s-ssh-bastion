@@ -28,6 +28,7 @@ pdb:
   minAvailable: 50%
 
 hostNetwork: false
+dnsConfig: {}
 terminationGracePeriodSeconds: 30
 lifecycle:
   preStop:
