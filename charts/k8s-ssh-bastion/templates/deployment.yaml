@@ -48,7 +48,7 @@ spec:
 
               mkdir -p /run/sshd
 
-              /usr/sbin/sshd -D -E /proc/1/fd/1
+              /usr/sbin/sshd -D -e -E /proc/1/fd/1
           lifecycle: {{ .Values.lifecycle | toJson }}
           ports:
             - name: ssh
