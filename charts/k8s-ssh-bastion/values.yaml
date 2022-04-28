@@ -46,13 +46,13 @@ topologySpreadConstraints:
     whenUnsatisfiable: ScheduleAnyway
     labelSelector:
       matchLabels:
-        app: "{{ .Release.Name }}"
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
   - maxSkew: 1
     topologyKey: kubernetes.io/hostname
     whenUnsatisfiable: ScheduleAnyway
     labelSelector:
       matchLabels:
-        app: "{{ .Release.Name }}"
+        app.kubernetes.io/instance: "{{ .Release.Name }}"
 
 storageClass: "efs"
 
