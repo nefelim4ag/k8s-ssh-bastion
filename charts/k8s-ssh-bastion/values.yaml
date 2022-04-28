@@ -8,6 +8,7 @@ replicaCount: 1
 
 service:
   annotations: {}
+  type: NodePort
   nodePort: 30022
 
 resources:
@@ -15,16 +16,51 @@ resources:
     cpu: 10m
     memory: 32Mi
 
-affinity: {}
-
 users: {}
 #  nefelim4ag: |
 #    ssh-rsa ... comment
+
+## Pod Disruption Budget configuration in distributed mode.
+## @param pdb.minAvaliable how many pods must be available to proceed with deployment
+## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+##
+pdb:
+  minAvailable: 50%
+
+hostNetwork: false
+terminationGracePeriodSeconds: 30
+lifecycle:
+  preStop:
+    exec:
+      command:
+        - sh
+        - -c
+        - "sleep 15; kill 1"
+
+affinity: {}
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: "{{ .Release.Name }}"
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: "{{ .Release.Name }}"
 
 storageClass: "efs"
 
 # Override files under /etc/ssh
 ssh:
+  banner: |
+    Welcome to k8s-ssh-bastion
+    image: {{ .Chart.AppVersion }}
+    chart: {{ .Chart.Version }}
   sshd_config: |
     Include /etc/ssh/sshd_config.d/*.conf
 
@@ -76,8 +112,7 @@ ssh:
     #ChrootDirectory none
     #VersionAddendum none
 
-    # no default banner path
-    #Banner none
+    Banner /etc/ssh/banner
 
     # Allow client to pass locale environment variables
     AcceptEnv LANG LC_*
