@@ -3,6 +3,15 @@ entries:
   k8s-ssh-bastion:
   - apiVersion: v1
     appVersion: 0.3.0
+    created: "2022-12-08T10:37:41.3739004Z"
+    description: A Helm chart for k8s bastion
+    digest: b3f600345f76320730fe2fa33774603f8a52ffb8150f2ec71d0393d28ca90fbd
+    name: k8s-ssh-bastion
+    urls:
+    - https://github.com/Nefelim4ag/k8s-ssh-bastion/releases/download/k8s-ssh-bastion-0.3.6/k8s-ssh-bastion-0.3.6.tgz
+    version: 0.3.6
+  - apiVersion: v1
+    appVersion: 0.3.0
     created: "2022-04-28T12:24:49.119141588Z"
     description: A Helm chart for k8s bastion
     digest: c8d1d1f0c68658f7f8c6de108e0bf68c6ba1a01a71cd5a0885e898a427896988
@@ -64,4 +73,4 @@ entries:
     urls:
     - https://github.com/Nefelim4ag/k8s-ssh-bastion/releases/download/k8s-ssh-bastion-0.2.1/k8s-ssh-bastion-0.2.1.tgz
     version: 0.2.1
-generated: "2022-04-28T12:24:49.119601791Z"
+generated: "2022-12-08T10:37:41.3739318Z"
