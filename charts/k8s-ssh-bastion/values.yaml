@@ -56,6 +56,11 @@ topologySpreadConstraints:
 
 storageClass: "efs"
 
+initscripts: {}
+  # install-tools.sh: |
+  #   #!/bin/bash
+  #   echo do something
+
 # Override files under /etc/ssh
 ssh:
   banner: |

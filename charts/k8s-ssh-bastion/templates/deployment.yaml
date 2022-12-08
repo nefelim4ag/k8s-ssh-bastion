@@ -48,6 +48,12 @@ spec:
 
               mkdir -p /run/sshd
 
+              {{- with .Values.initscripts }}
+              {{- range $key, $value := . }}
+              {{ $key }}
+              {{- end }}
+              {{- end }}
+
               /usr/sbin/sshd -D -e -E /proc/1/fd/1
           lifecycle: {{ .Values.lifecycle | toJson }}
           ports:
@@ -61,6 +67,8 @@ spec:
             mountPath: /etc/ssh
           - name: sshd-configs-origin
             mountPath: /etc/ssh_origin
+          - name: usr-share-initscripts
+            mountPath: /usr/share/initscripts
           resources:
 {{ toYaml .Values.resources | indent 12 }}
       hostNetwork: {{ .Values.hostNetwork }}
@@ -84,6 +92,10 @@ spec:
       - name: sshd-configs-origin
         configMap:
           name: {{ .Release.Name }}-etc-ssh-origin
+      - name: usr-share-startup
+        configMap:
+          name: {{ .Release.Name }}-usr-share-initscripts
+          defaultMode: 0755
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -99,6 +111,15 @@ metadata:
   name: {{ .Release.Name }}-etc-ssh-origin
 data:
 {{ tpl (toYaml .Values.ssh) $ | indent 2 }}
+
+---
+# Additional startup commands
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-usr-share-initscripts
+data:
+{{ tpl (toYaml .Values.initscripts) $ | indent 2 }}
 
 ---
 # Used to store ssh host keys & other stuff
