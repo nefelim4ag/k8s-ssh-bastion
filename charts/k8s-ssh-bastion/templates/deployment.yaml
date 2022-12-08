@@ -50,7 +50,7 @@ spec:
 
               {{- with .Values.initscripts }}
               {{- range $key, $value := . }}
-              {{ $key }}
+              /usr/share/initscripts/{{ $key }}
               {{- end }}
               {{- end }}
 
@@ -92,7 +92,7 @@ spec:
       - name: sshd-configs-origin
         configMap:
           name: {{ .Release.Name }}-etc-ssh-origin
-      - name: usr-share-startup
+      - name: usr-share-initscripts
         configMap:
           name: {{ .Release.Name }}-usr-share-initscripts
           defaultMode: 0755
