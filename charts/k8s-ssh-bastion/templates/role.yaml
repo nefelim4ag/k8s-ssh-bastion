@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}
+rules:
+  - verbs:
+      - create
+      - get
+    apiGroups:
+      - ''
+    resources:
+      - secrets

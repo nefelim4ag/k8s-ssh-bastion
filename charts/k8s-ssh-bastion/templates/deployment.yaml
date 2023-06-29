@@ -23,18 +23,11 @@ spec:
             - /bin/bash
             - -ec
             - |
-              for file in /etc/ssh_origin/*; do
-                NAME=$(basename $file)
-                install -Dm0600 /etc/ssh_origin/$NAME /etc/ssh/$NAME
-              done
-
               cd /etc/ssh
-              for key_type in dsa rsa ecdsa ed25519; do
-                lengh=4096
-                [ $key_type == "dsa" ] && lengh=1024
-                [ $key_type == "ecdsa" ] && lengh=256
-                test -f ssh_host_${key_type}_key || \
-                  ssh-keygen -q -N "" -t ${key_type} -b $lengh -f ./ssh_host_${key_type}_key
+              for ssh_key in /etc/ssh/ssh_host_*_key; do
+                if [ ! -f ${ssh_key}.pub ]; then
+                  ssh-keygen -y -f ${ssh_key} > ${ssh_key}.pub
+                fi
               done
 
               USER_UID=1000
@@ -56,6 +49,7 @@ spec:
 
               /usr/sbin/sshd -D -e -E /proc/1/fd/1
           lifecycle: {{ .Values.lifecycle | toJson }}
+          resources: {{ .Values.resources | toJson }}
           ports:
             - name: ssh
               containerPort: 1022
@@ -63,14 +57,31 @@ spec:
           volumeMounts:
           - name: config-volume
             mountPath: /etc/users
-          - name: sshd-configs-persistent
-            mountPath: /etc/ssh
-          - name: sshd-configs-origin
-            mountPath: /etc/ssh_origin
           - name: usr-share-initscripts
             mountPath: /usr/share/initscripts
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
+          {{- range $key, $value := .Values.ssh }}
+          - name: sshd-configs
+            mountPath: /etc/ssh/{{ $key }}
+            subPath: {{ $key }}
+          {{- end }}
+          - name: {{ .Release.Name }}-rsa
+            mountPath: /etc/ssh/ssh_host_rsa_key
+            subPath: ssh_host_rsa_key
+          - name: {{ .Release.Name }}-ecdsa
+            mountPath: /etc/ssh/ssh_host_ecdsa_key
+            subPath: ssh_host_ecdsa_key
+          - name: {{ .Release.Name }}-ed25519
+            mountPath: /etc/ssh/ssh_host_ed25519_key
+            subPath: ssh_host_ed25519_key
+          - name: {{ .Release.Name }}-rsa
+            mountPath: /etc/ssh/ssh_host_rsa_key.pub
+            subPath: ssh_host_rsa_key.pub
+          - name: {{ .Release.Name }}-ecdsa
+            mountPath: /etc/ssh/ssh_host_ecdsa_key.pub
+            subPath: ssh_host_ecdsa_key.pub
+          - name: {{ .Release.Name }}-ed25519
+            mountPath: /etc/ssh/ssh_host_ed25519_key.pub
+            subPath: ssh_host_ed25519_key.pub
       hostNetwork: {{ .Values.hostNetwork }}
       {{- with .Values.dnsConfig }}
       dnsConfig: {{ . | toJson }}
@@ -86,16 +97,30 @@ spec:
       - name: config-volume
         configMap:
           name: {{ .Release.Name }}
-      - name: sshd-configs-persistent
-        persistentVolumeClaim:
-          claimName: {{ .Release.Name }}-etc-ssh
-      - name: sshd-configs-origin
+      - name: sshd-configs
         configMap:
-          name: {{ .Release.Name }}-etc-ssh-origin
+          name: {{ .Release.Name }}-etc-ssh
+          defaultMode: 0600
       - name: usr-share-initscripts
         configMap:
           name: {{ .Release.Name }}-usr-share-initscripts
           defaultMode: 0755
+      - name: {{ .Release.Name }}-dsa
+        secret:
+          secretName: {{ .Release.Name }}-dsa
+          defaultMode: 0600
+      - name: {{ .Release.Name }}-rsa
+        secret:
+          secretName: {{ .Release.Name }}-rsa
+          defaultMode: 0600
+      - name: {{ .Release.Name }}-ecdsa
+        secret:
+          secretName: {{ .Release.Name }}-ecdsa
+          defaultMode: 0600
+      - name: {{ .Release.Name }}-ed25519
+        secret:
+          secretName: {{ .Release.Name }}-ed25519
+          defaultMode: 0600
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -108,7 +133,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Release.Name }}-etc-ssh-origin
+  name: {{ .Release.Name }}-etc-ssh
 data:
 {{ tpl (toYaml .Values.ssh) $ | indent 2 }}
 
@@ -120,17 +145,3 @@ metadata:
   name: {{ .Release.Name }}-usr-share-initscripts
 data:
 {{ tpl (toYaml .Values.initscripts) $ | indent 2 }}
-
----
-# Used to store ssh host keys & other stuff
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Release.Name }}-etc-ssh
-spec:
-  storageClassName: "{{ .Values.storageClass }}" # Empty string must be explicitly set otherwise default StorageClass will be set
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi

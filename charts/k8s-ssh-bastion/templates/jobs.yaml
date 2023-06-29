@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-{{ .Release.Revision }}"
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      containers:
+      - name: ssh-keygen
+        image: "{{ .Values.image.repository }}:{{ tpl .Values.image.tag $ }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - /bin/bash
+          - -ec
+          - |
+            cd /etc/ssh
+            for key_type in rsa ecdsa ed25519; do
+              if kubectl -n k8s-bastion get secrets {{ .Release.Name }}-${key_type} -o name; then
+                continue
+              fi
+              lengh=4096
+              [ $key_type == "ecdsa" ] && lengh=256
+              test -f ssh_host_${key_type}_key || \
+                ssh-keygen -q -N "" -t ${key_type} -b $lengh -f ./ssh_host_${key_type}_key
+              kubectl create secret generic {{ .Release.Name }}-${key_type} \
+                --from-file=ssh_host_${key_type}_key=./ssh_host_${key_type}_key \
+                --from-file=ssh_host_${key_type}_key.pub=./ssh_host_${key_type}_key.pub
+            done
+        volumeMounts:
+        - name: opt
+          mountPath: /etc/ssh
+      volumes:
+        - name: opt
+          emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 4

@@ -54,8 +54,6 @@ topologySpreadConstraints:
       matchLabels:
         app.kubernetes.io/instance: "{{ .Release.Name }}"
 
-storageClass: "efs"
-
 initscripts: {}
   # install-tools.sh: |
   #   #!/bin/bash
