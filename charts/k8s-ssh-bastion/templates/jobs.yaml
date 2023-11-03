@@ -17,7 +17,7 @@ spec:
           - |
             cd /etc/ssh
             for key_type in rsa ecdsa ed25519; do
-              if kubectl -n k8s-bastion get secrets {{ .Release.Name }}-${key_type} -o name; then
+              if kubectl get secrets {{ .Release.Name }}-${key_type} -o name; then
                 continue
               fi
               lengh=4096
