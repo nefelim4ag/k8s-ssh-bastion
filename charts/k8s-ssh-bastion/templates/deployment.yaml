@@ -32,11 +32,13 @@ spec:
 
               USER_UID=1000
               for i in /etc/users/*; do
-                useradd -rm -d /home/${i##*/} -s /bin/bash -g root -u $((USER_UID++)) ${i##*/}
-                mkdir -p /home/${i##*/}/.ssh
-                install -Dm0600 $i /home/${i##*/}/.ssh/authorized_keys
-                chmod 700 /home/${i##*/}/.ssh
-                chown -R ${i##*/}:nogroup /home/${i##*/}
+                if [ -f "$i" ]; then
+                  useradd -rm -d /home/${i##*/} -s /bin/bash -g root -u $((USER_UID++)) ${i##*/}
+                  mkdir -p /home/${i##*/}/.ssh
+                  install -Dm0600 $i /home/${i##*/}/.ssh/authorized_keys
+                  chmod 700 /home/${i##*/}/.ssh
+                  chown -R ${i##*/}:nogroup /home/${i##*/}
+                fi
               done
 
               mkdir -p /run/sshd
