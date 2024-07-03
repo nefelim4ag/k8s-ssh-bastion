@@ -30,7 +30,7 @@ spec:
                 fi
               done
 
-              USER_UID=1000
+              USER_UID=1001
               for i in /etc/users/*; do
                 if [ -f "$i" ]; then
                   useradd -rm -d /home/${i##*/} -s /bin/bash -g root -u $((USER_UID++)) ${i##*/}

@@ -2,4 +2,4 @@ apiVersion: v1
 appVersion: 0.5.0
 description: A Helm chart for k8s bastion
 name: k8s-ssh-bastion
-version: 0.5.3
+version: 0.5.4
